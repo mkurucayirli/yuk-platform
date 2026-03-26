@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 let loads = [
   {
@@ -31,10 +32,24 @@ app.get("/", (req, res) => {
       body { font-family: Arial; padding:20px; }
       .card { border:1px solid #ccc; padding:15px; margin-bottom:10px; border-radius:10px;}
       .btn { background:black; color:white; padding:10px; display:inline-block; margin-top:10px;}
+      input { padding:8px; width:200px; }
+      button { padding:10px; background:black; color:white; border:none; }
     </style>
   </head>
   <body>
     <h2>🚚 Yük Listesi</h2>
+
+    <h3>➕ Yeni Yük Ekle</h3>
+    <form method="POST" action="/add">
+      <input name="from" placeholder="Nereden" required><br><br>
+      <input name="to" placeholder="Nereye" required><br><br>
+      <input name="vehicle" placeholder="Araç tipi" required><br><br>
+      <input name="type" placeholder="Kasa tipi" required><br><br>
+      <input name="phone" placeholder="Telefon" required><br><br>
+      <button type="submit">Ekle</button>
+    </form>
+
+    <hr>
   `;
 
   loads.forEach(l => {
@@ -53,10 +68,6 @@ app.get("/", (req, res) => {
   res.send(html);
 });
 
-app.listen(3000, () => {
-  console.log("Server running");
-});
-
 app.post("/add", (req, res) => {
   const { from, to, vehicle, type, phone } = req.body;
 
@@ -69,5 +80,9 @@ app.post("/add", (req, res) => {
     phone
   });
 
-  res.send("Yük eklendi");
+  res.redirect("/");
+});
+
+app.listen(3000, () => {
+  console.log("Server running");
 });
