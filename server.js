@@ -56,3 +56,18 @@ app.get("/", (req, res) => {
 app.listen(3000, () => {
   console.log("Server running");
 });
+
+app.post("/add", (req, res) => {
+  const { from, to, vehicle, type, phone } = req.body;
+
+  loads.unshift({
+    from,
+    to,
+    vehicle,
+    type,
+    time: "şimdi",
+    phone
+  });
+
+  res.send("Yük eklendi");
+});
