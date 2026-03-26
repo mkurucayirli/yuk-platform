@@ -31,9 +31,9 @@ app.get("/", (req, res) => {
     <style>
       body { font-family: Arial; padding:20px; }
       .card { border:1px solid #ccc; padding:15px; margin-bottom:10px; border-radius:10px;}
-      .btn { background:black; color:white; padding:10px; display:inline-block; margin-top:10px;}
-      input { padding:8px; width:200px; }
-      button { padding:10px; background:black; color:white; border:none; }
+      .btn { background:black; color:white; padding:10px; display:inline-block; margin-top:10px; text-decoration:none; }
+      input { padding:8px; width:240px; }
+      button { padding:10px; background:black; color:white; border:none; cursor:pointer; }
     </style>
   </head>
   <body>
@@ -64,7 +64,6 @@ app.get("/", (req, res) => {
   });
 
   html += `</body></html>`;
-
   res.send(html);
 });
 
@@ -81,6 +80,30 @@ app.post("/add", (req, res) => {
   });
 
   res.redirect("/");
+});
+
+// Collector bu endpoint'e veri gönderecek
+app.post("/api/import", (req, res) => {
+  const { from, to, vehicle, type, phone, apiKey } = req.body;
+
+  if (apiKey !== "123456") {
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
+  }
+
+  if (!from || !to || !vehicle || !type || !phone) {
+    return res.status(400).json({ ok: false, error: "Eksik alan var" });
+  }
+
+  loads.unshift({
+    from,
+    to,
+    vehicle,
+    type,
+    time: "otomatik",
+    phone
+  });
+
+  res.json({ ok: true, message: "Yük eklendi" });
 });
 
 app.listen(3000, () => {
