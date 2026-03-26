@@ -4,33 +4,16 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-let loads = [
-  {
-    from: "Adana",
-    to: "Ankara",
-    vehicle: "Tır",
-    type: "Açık",
-    weight: "",
-    price: "",
-    time: "otomatik",
-    phone: "05447875852",
-    rawText: "ADANA➡️ANKARA"
-  },
-  {
-    from: "Elazığ",
-    to: "Bursa",
-    vehicle: "Tır",
-    type: "Tenteli",
-    weight: "",
-    price: "",
-    time: "otomatik",
-    phone: "05342190000",
-    rawText: "Elazığ --- Bursa Gemlik"
-  }
-];
+// Başlangıçta örnek veri yok
+let loads = [];
 
 function safe(v) {
   return (v || "").toString().trim();
+}
+
+function formatShareTime(v) {
+  if (!v) return "";
+  return safe(v);
 }
 
 app.get("/", (req, res) => {
@@ -45,16 +28,10 @@ app.get("/", (req, res) => {
     <title>Yük Platformu</title>
     <style>
       :root{
-        --bg:#07111f;
-        --bg2:#0b1830;
-        --card:#0e1d36cc;
-        --card2:#12274acc;
-        --line:#29426d;
         --text:#eaf2ff;
         --muted:#9fb3d6;
         --accent:#6aa6ff;
         --accent2:#7ef0ff;
-        --success:#cfe3ff;
         --shadow: 0 20px 50px rgba(0,0,0,.45);
       }
 
@@ -317,7 +294,7 @@ app.get("/", (req, res) => {
 
       .load-card{
         position:relative;
-        min-height: 240px;
+        min-height: 260px;
         padding:20px;
         border-radius:24px;
         border:1px solid rgba(126,240,255,.14);
@@ -327,6 +304,8 @@ app.get("/", (req, res) => {
           0 16px 40px rgba(0,0,0,.40),
           inset 0 1px 0 rgba(255,255,255,.04);
         transform: perspective(1200px) rotateX(6deg);
+        display:flex;
+        flex-direction:column;
       }
 
       .load-card::before{
@@ -408,10 +387,11 @@ app.get("/", (req, res) => {
         box-shadow: 0 12px 24px rgba(106,166,255,.22);
       }
 
-      .time{
+      .share-time{
         color:#8da7d3;
         font-size:13px;
         text-align:right;
+        line-height:1.5;
       }
 
       .raw{
@@ -456,10 +436,9 @@ app.get("/", (req, res) => {
       <section class="hero">
         <div class="hero-left">
           <div class="badge">YÜK KOMUTA MERKEZİ</div>
-          <h1>Yük Akışı <span style="color:var(--accent2);">Kontrol Paneli</span></h1>
+          <h1>Türkiye’nin <span style="color:var(--accent2);">Premium Nakliye Garajı</span></h1>
           <div class="sub">
-            WhatsApp’tan düşen yükleri hızlıca filtrele, yenile ve tek ekranda takip et.
-            Karanlık tema, 3D kartlar ve sade kullanım ile Naviyon havasında bir komuta merkezi.
+            Yükü erken gör, doğru filtrele, tek ekranda yönet.
           </div>
         </div>
 
@@ -472,7 +451,6 @@ app.get("/", (req, res) => {
           <div class="stat-card">
             <div class="stat-label">Canlı Durum</div>
             <div class="stat-value">ONLINE</div>
-            <div class="stat-note">Collector bağlıysa yeni yükler anlık düşer</div>
           </div>
         </div>
       </section>
@@ -488,12 +466,12 @@ app.get("/", (req, res) => {
         <div class="controls">
           <div class="field">
             <label>Yükleme Yeri</label>
-            <input id="filterFrom" class="input" placeholder="Örn: Ankara, Sincan, Bandırma" />
+            <input id="filterFrom" class="input" placeholder="İl ya da İlçe Adı Yazınız" />
           </div>
 
           <div class="field">
             <label>Boşaltma Yeri</label>
-            <input id="filterTo" class="input" placeholder="Örn: İzmir, Karatay, Gemlik" />
+            <input id="filterTo" class="input" placeholder="İl ya da İlçe Adı Yazınız" />
           </div>
 
           <div class="field">
@@ -512,8 +490,8 @@ app.get("/", (req, res) => {
           </div>
 
           <div class="field">
-            <label>Ham Mesaj</label>
-            <input id="filterRaw" class="input" placeholder="Mesaj içinde kelime ara" />
+            <label>Kelime Ara</label>
+            <input id="filterRaw" class="input" placeholder="Kelime Ara" />
           </div>
         </div>
 
@@ -525,7 +503,7 @@ app.get("/", (req, res) => {
 
         <div class="results-bar">
           <div id="resultsText">Yükler yükleniyor...</div>
-          <div>Uzay Üssü Modu</div>
+          <div></div>
         </div>
 
         <div class="cards" id="cards"></div>
@@ -561,7 +539,7 @@ app.get("/", (req, res) => {
         resultsText.textContent = items.length + " ilan listeleniyor";
 
         if (!items.length){
-          cards.innerHTML = '<div class="empty">Filtreye uygun ilan bulunamadı.</div>';
+          cards.innerHTML = '<div class="empty">Henüz WhatsApp’tan düşen aktif ilan yok.</div>';
           return;
         }
 
@@ -579,7 +557,7 @@ app.get("/", (req, res) => {
 
               <div class="card-footer">
                 \${safe(item.phone) ? '<a class="call-btn" href="tel:' + safe(item.phone) + '">Ara</a>' : '<div></div>'}
-                <div class="time">\${safe(item.time) || 'otomatik'}</div>
+                <div class="share-time">\${safe(item.sharedAt) ? 'Paylaşım Zamanı: ' + safe(item.sharedAt) : ''}</div>
               </div>
 
               \${safe(item.rawText) ? '<div class="raw">Ham mesaj: ' + safe(item.rawText) + '</div>' : ''}
@@ -633,7 +611,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/api/import", (req, res) => {
-  const { from, to, vehicle, type, weight, price, phone, rawText, apiKey } = req.body;
+  const { from, to, vehicle, type, weight, price, phone, rawText, sharedAt, apiKey } = req.body;
 
   if (apiKey !== "123456") {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
@@ -650,9 +628,9 @@ app.post("/api/import", (req, res) => {
     type: safe(type),
     weight: safe(weight),
     price: safe(price),
-    time: "otomatik",
     phone: safe(phone),
-    rawText: safe(rawText)
+    rawText: safe(rawText),
+    sharedAt: safe(sharedAt)
   });
 
   res.json({ ok: true, message: "Yük eklendi" });
