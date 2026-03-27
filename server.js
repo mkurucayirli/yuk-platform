@@ -11,11 +11,6 @@ function safe(v) {
   return (v || "").toString().trim();
 }
 
-function formatShareTime(v) {
-  if (!v) return "";
-  return safe(v);
-}
-
 app.get("/", (req, res) => {
   const serializedLoads = JSON.stringify(loads);
 
@@ -232,7 +227,9 @@ app.get("/", (req, res) => {
         transition:.2s ease;
       }
 
-      .input::placeholder{ color:#7f95bb; }
+      .input::placeholder{
+        color:#7f95bb;
+      }
 
       .input:focus{
         border-color: rgba(126,240,255,.55);
@@ -254,7 +251,7 @@ app.get("/", (req, res) => {
         cursor:pointer;
         font-weight:700;
         letter-spacing:.01em;
-        transition: .2s ease;
+        transition:.2s ease;
       }
 
       .btn-primary{
@@ -263,7 +260,9 @@ app.get("/", (req, res) => {
         box-shadow: 0 12px 30px rgba(106,166,255,.28);
       }
 
-      .btn-primary:hover{ transform: translateY(-1px); }
+      .btn-primary:hover{
+        transform: translateY(-1px);
+      }
 
       .btn-secondary{
         color:var(--text);
@@ -294,7 +293,7 @@ app.get("/", (req, res) => {
 
       .load-card{
         position:relative;
-        min-height: 260px;
+        min-height:260px;
         padding:20px;
         border-radius:24px;
         border:1px solid rgba(126,240,255,.14);
@@ -424,7 +423,10 @@ app.get("/", (req, res) => {
         .hero-left, .panel{ border-radius:22px; }
         .controls{ grid-template-columns: 1fr; }
         .cards{ grid-template-columns: 1fr; padding: 0 16px 16px; }
-        .panel-head, .controls, .actions, .results-bar{ padding-left:16px; padding-right:16px; }
+        .panel-head, .controls, .actions, .results-bar{
+          padding-left:16px;
+          padding-right:16px;
+        }
         .route{ font-size:24px; }
       }
     </style>
