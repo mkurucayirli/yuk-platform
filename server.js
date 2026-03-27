@@ -6,7 +6,6 @@ app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 let loads = [];
 
-// Tüm il / ilçe eşleştirmesi için cache
 let districtToCityMap = {};
 let cityToDistrictsMap = {};
 let cityAliases = {};
@@ -79,23 +78,6 @@ async function buildCityDistrictMaps() {
   console.log("Şehir / ilçe map hazır");
 }
 
-function cityMatchesMessage(messageText, cityInput) {
-  const msg = normalizeTurkish(messageText);
-  const cityNorm = normalizeTurkish(cityInput);
-
-  const resolvedCity = cityAliases[cityNorm] || cityInput;
-  const resolvedCityNorm = normalizeTurkish(resolvedCity);
-
-  if (msg.includes(resolvedCityNorm)) return true;
-
-  const districts = cityToDistrictsMap[resolvedCityNorm] || [];
-  for (const district of districts) {
-    if (msg.includes(normalizeTurkish(district))) return true;
-  }
-
-  return false;
-}
-
 function districtOrCityMatchesMessage(messageText, input) {
   const msg = normalizeTurkish(messageText);
   const raw = normalizeTurkish(input);
@@ -105,16 +87,13 @@ function districtOrCityMatchesMessage(messageText, input) {
   const resolved = cityAliases[raw] || input;
   const resolvedNorm = normalizeTurkish(resolved);
 
-  // direkt mesajda var mı
   if (msg.includes(resolvedNorm)) return true;
 
-  // eğer input bir ilçe ise üst ilini de kontrol edelim
   if (districtToCityMap[resolvedNorm]) {
     const cityName = districtToCityMap[resolvedNorm];
     if (msg.includes(normalizeTurkish(cityName))) return true;
   }
 
-  // eğer input bir il ise ilçelerini de kontrol edelim
   if (cityToDistrictsMap[resolvedNorm]) {
     for (const district of cityToDistrictsMap[resolvedNorm]) {
       if (msg.includes(normalizeTurkish(district))) return true;
@@ -122,6 +101,19 @@ function districtOrCityMatchesMessage(messageText, input) {
   }
 
   return false;
+}
+
+function sortLoadsNewestFirst() {
+  loads.sort((a, b) => {
+    const ta = Number(a.sharedAtTs || 0);
+    const tb = Number(b.sharedAtTs || 0);
+
+    if (tb !== ta) return tb - ta;
+
+    const sa = safe(a.sharedAt);
+    const sb = safe(b.sharedAt);
+    return sb.localeCompare(sa);
+  });
 }
 
 app.get("/", (req, res) => {
@@ -729,7 +721,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/api/import", (req, res) => {
-  const { phone, rawText, cleanText, sharedAt, apiKey } = req.body;
+  const { phone, rawText, cleanText, sharedAt, sharedAtTs, apiKey } = req.body;
 
   if (apiKey !== "123456") {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
@@ -739,12 +731,15 @@ app.post("/api/import", (req, res) => {
     return res.status(400).json({ ok: false, error: "Telefon ve mesaj zorunlu" });
   }
 
-  loads.unshift({
+  loads.push({
     phone: safe(phone),
     rawText: safe(rawText),
     cleanText: safe(cleanText),
-    sharedAt: safe(sharedAt)
+    sharedAt: safe(sharedAt),
+    sharedAtTs: Number(sharedAtTs || 0)
   });
+
+  sortLoadsNewestFirst();
 
   res.json({ ok: true, message: "İlan eklendi" });
 });
