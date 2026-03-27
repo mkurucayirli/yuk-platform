@@ -4,15 +4,124 @@ const app = express();
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
-// En yeni en başta
 let loads = [];
+
+// Tüm il / ilçe eşleştirmesi için cache
+let districtToCityMap = {};
+let cityToDistrictsMap = {};
+let cityAliases = {};
 
 function safe(v) {
   return (v || "").toString().trim();
 }
 
+function normalizeTurkish(str) {
+  return safe(str)
+    .toLowerCase()
+    .replace(/İ/g, "i")
+    .replace(/I/g, "ı")
+    .replace(/ı/g, "i")
+    .replace(/ş/g, "s")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c");
+}
+
 function contains(haystack, needle) {
-  return safe(haystack).toLowerCase().includes(safe(needle).toLowerCase());
+  return normalizeTurkish(haystack).includes(normalizeTurkish(needle));
+}
+
+async function buildCityDistrictMaps() {
+  const tn = await import("turkey-neighbourhoods");
+
+  const cityNames = tn.getCityNames();
+  const districtMap = tn.getDistrictsOfEachCity();
+  const cities = tn.getCities();
+
+  const citiesByCode = cities.reduce((acc, c) => {
+    acc[c.code] = c.name;
+    return acc;
+  }, {});
+
+  districtToCityMap = {};
+  cityToDistrictsMap = {};
+
+  for (const city of cityNames) {
+    cityToDistrictsMap[normalizeTurkish(city)] = [];
+  }
+
+  for (const [cityCode, districts] of Object.entries(districtMap)) {
+    const cityName = citiesByCode[cityCode];
+    const cityKey = normalizeTurkish(cityName);
+
+    if (!cityToDistrictsMap[cityKey]) {
+      cityToDistrictsMap[cityKey] = [];
+    }
+
+    for (const district of districts) {
+      const districtKey = normalizeTurkish(district);
+      districtToCityMap[districtKey] = cityName;
+      cityToDistrictsMap[cityKey].push(district);
+    }
+  }
+
+  cityAliases = {
+    urfa: "Şanlıurfa",
+    sanliurfa: "Şanlıurfa",
+    antep: "Gaziantep",
+    maras: "Kahramanmaraş",
+    afyon: "Afyonkarahisar",
+    izmit: "Kocaeli",
+    icel: "Mersin"
+  };
+
+  console.log("Şehir / ilçe map hazır");
+}
+
+function cityMatchesMessage(messageText, cityInput) {
+  const msg = normalizeTurkish(messageText);
+  const cityNorm = normalizeTurkish(cityInput);
+
+  const resolvedCity = cityAliases[cityNorm] || cityInput;
+  const resolvedCityNorm = normalizeTurkish(resolvedCity);
+
+  if (msg.includes(resolvedCityNorm)) return true;
+
+  const districts = cityToDistrictsMap[resolvedCityNorm] || [];
+  for (const district of districts) {
+    if (msg.includes(normalizeTurkish(district))) return true;
+  }
+
+  return false;
+}
+
+function districtOrCityMatchesMessage(messageText, input) {
+  const msg = normalizeTurkish(messageText);
+  const raw = normalizeTurkish(input);
+
+  if (!raw) return true;
+
+  const resolved = cityAliases[raw] || input;
+  const resolvedNorm = normalizeTurkish(resolved);
+
+  // direkt mesajda var mı
+  if (msg.includes(resolvedNorm)) return true;
+
+  // eğer input bir ilçe ise üst ilini de kontrol edelim
+  if (districtToCityMap[resolvedNorm]) {
+    const cityName = districtToCityMap[resolvedNorm];
+    if (msg.includes(normalizeTurkish(cityName))) return true;
+  }
+
+  // eğer input bir il ise ilçelerini de kontrol edelim
+  if (cityToDistrictsMap[resolvedNorm]) {
+    for (const district of cityToDistrictsMap[resolvedNorm]) {
+      if (msg.includes(normalizeTurkish(district))) return true;
+    }
+  }
+
+  return false;
 }
 
 app.get("/", (req, res) => {
@@ -438,7 +547,7 @@ app.get("/", (req, res) => {
         <div class="panel-head">
           <div>
             <div class="panel-title">Yük Arama ve Filtreleme</div>
-            <div class="panel-sub">Mesajların içinde arama yaparak ilanları filtrele.</div>
+            <div class="panel-sub">İl filtrelerinde tüm ilçeler de otomatik kapsanır.</div>
           </div>
         </div>
 
@@ -491,13 +600,54 @@ app.get("/", (req, res) => {
 
     <script>
       const allLoads = ${serializedLoads};
+      const districtToCityMap = ${JSON.stringify(districtToCityMap)};
+      const cityToDistrictsMap = ${JSON.stringify(cityToDistrictsMap)};
+      const cityAliases = ${JSON.stringify(cityAliases)};
 
       function safe(v){
         return (v || "").toString().trim();
       }
 
+      function normalizeTurkish(str){
+        return safe(str)
+          .toLowerCase()
+          .replace(/İ/g, "i")
+          .replace(/I/g, "ı")
+          .replace(/ı/g, "i")
+          .replace(/ş/g, "s")
+          .replace(/ğ/g, "g")
+          .replace(/ü/g, "u")
+          .replace(/ö/g, "o")
+          .replace(/ç/g, "c");
+      }
+
       function contains(haystack, needle){
-        return safe(haystack).toLowerCase().includes(safe(needle).toLowerCase());
+        return normalizeTurkish(haystack).includes(normalizeTurkish(needle));
+      }
+
+      function districtOrCityMatchesMessage(messageText, input){
+        const msg = normalizeTurkish(messageText);
+        const raw = normalizeTurkish(input);
+
+        if (!raw) return true;
+
+        const resolved = cityAliases[raw] || input;
+        const resolvedNorm = normalizeTurkish(resolved);
+
+        if (msg.includes(resolvedNorm)) return true;
+
+        if (districtToCityMap[resolvedNorm]) {
+          const cityName = districtToCityMap[resolvedNorm];
+          if (msg.includes(normalizeTurkish(cityName))) return true;
+        }
+
+        if (cityToDistrictsMap[resolvedNorm]) {
+          for (const district of cityToDistrictsMap[resolvedNorm]) {
+            if (msg.includes(normalizeTurkish(district))) return true;
+          }
+        }
+
+        return false;
       }
 
       function renderCards(items){
@@ -542,8 +692,8 @@ app.get("/", (req, res) => {
         const filtered = allLoads.filter(item => {
           const msg = safe(item.cleanText || item.rawText);
 
-          if (from && !contains(msg, from)) return false;
-          if (to && !contains(msg, to)) return false;
+          if (from && !districtOrCityMatchesMessage(msg, from)) return false;
+          if (to && !districtOrCityMatchesMessage(msg, to)) return false;
           if (vehicle && !contains(msg, vehicle)) return false;
           if (type && !contains(msg, type)) return false;
           if (phone && !contains(item.phone, phone)) return false;
@@ -599,6 +749,14 @@ app.post("/api/import", (req, res) => {
   res.json({ ok: true, message: "İlan eklendi" });
 });
 
-app.listen(3000, () => {
-  console.log("Server running");
-});
+(async () => {
+  try {
+    await buildCityDistrictMaps();
+    app.listen(3000, () => {
+      console.log("Server running");
+    });
+  } catch (err) {
+    console.error("Server startup error:", err.message);
+    process.exit(1);
+  }
+})();
