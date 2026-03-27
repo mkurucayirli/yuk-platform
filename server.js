@@ -103,20 +103,73 @@ function districtOrCityMatchesMessage(messageText, input) {
   return false;
 }
 
+// dd/mm/yyyy hh.mm  -> unix ms
+function parseSharedAtToMs(sharedAt) {
+  const s = safe(sharedAt);
+  if (!s) return 0;
+
+  const m = s.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})\.(\d{2})$/
+  );
+
+  if (!m) return 0;
+
+  const [, dd, mm, yyyy, hh, min] = m;
+
+  const date = new Date(
+    Number(yyyy),
+    Number(mm) - 1,
+    Number(dd),
+    Number(hh),
+    Number(min),
+    0,
+    0
+  );
+
+  const ms = date.getTime();
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function getSortTimestamp(item) {
+  const directTs = Number(item.sharedAtTs || 0);
+  if (directTs > 0) {
+    // collector seconds gönderiyor
+    if (directTs < 1000000000000) {
+      return directTs * 1000;
+    }
+    return directTs;
+  }
+
+  return parseSharedAtToMs(item.sharedAt);
+}
+
 function sortLoadsNewestFirst() {
   loads.sort((a, b) => {
-    const ta = Number(a.sharedAtTs || 0);
-    const tb = Number(b.sharedAtTs || 0);
+    const ta = getSortTimestamp(a);
+    const tb = getSortTimestamp(b);
 
     if (tb !== ta) return tb - ta;
 
+    // Aynıysa telefon ve mesaja göre stabil fallback
     const sa = safe(a.sharedAt);
     const sb = safe(b.sharedAt);
-    return sb.localeCompare(sa);
+    if (sb !== sa) return sb.localeCompare(sa, "tr");
+
+    const pa = safe(a.phone);
+    const pb = safe(b.phone);
+    if (pb !== pa) return pb.localeCompare(pa, "tr");
+
+    return safe(b.cleanText || b.rawText).localeCompare(
+      safe(a.cleanText || a.rawText),
+      "tr"
+    );
   });
 }
 
 app.get("/", (req, res) => {
+  // Her sayfa açılışında garanti sort
+  sortLoadsNewestFirst();
+
   const serializedLoads = JSON.stringify(loads);
 
   const html = `
@@ -740,6 +793,19 @@ app.post("/api/import", (req, res) => {
   });
 
   sortLoadsNewestFirst();
+
+  console.log("SON 10 İLAN SIRASI:");
+  loads.slice(0, 10).forEach((x, i) => {
+    console.log(
+      i + 1,
+      "|",
+      x.sharedAt,
+      "|",
+      x.sharedAtTs,
+      "|",
+      safe(x.phone)
+    );
+  });
 
   res.json({ ok: true, message: "İlan eklendi" });
 });
