@@ -1,14 +1,18 @@
 const express = require("express");
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
-// Başlangıçta örnek veri yok
+// En yeni en başta
 let loads = [];
 
 function safe(v) {
   return (v || "").toString().trim();
+}
+
+function contains(haystack, needle) {
+  return safe(haystack).toLowerCase().includes(safe(needle).toLowerCase());
 }
 
 app.get("/", (req, res) => {
@@ -286,7 +290,7 @@ app.get("/", (req, res) => {
 
       .cards{
         display:grid;
-        grid-template-columns: repeat(3, minmax(0,1fr));
+        grid-template-columns: repeat(2, minmax(0,1fr));
         gap:18px;
         padding: 0 22px 22px;
       }
@@ -316,51 +320,22 @@ app.get("/", (req, res) => {
         pointer-events:none;
       }
 
-      .route{
-        font-size:28px;
-        font-weight:900;
-        letter-spacing:-0.03em;
-        margin-bottom:12px;
-        line-height:1.1;
-      }
-
-      .route span{
-        color: var(--accent2);
-      }
-
-      .chips{
-        display:flex;
-        flex-wrap:wrap;
-        gap:10px;
-        margin-bottom:14px;
-      }
-
-      .chip{
-        display:inline-flex;
-        align-items:center;
-        height:34px;
-        padding:0 12px;
-        border-radius:999px;
-        background: rgba(11,26,50,.92);
-        border:1px solid rgba(106,166,255,.20);
-        color:#dbe7ff;
-        font-size:13px;
-      }
-
-      .meta-block{
-        display:grid;
-        gap:10px;
-        margin-bottom:16px;
-      }
-
-      .meta-line{
-        color:#c8d9f6;
-        font-size:14px;
-      }
-
-      .meta-line strong{
-        color:#ffffff;
+      .phone-top{
+        color:#9fe4ff;
         font-weight:700;
+        font-size:15px;
+        margin-bottom:14px;
+        word-break:break-word;
+      }
+
+      .message-box{
+        flex:1;
+        color:#eaf2ff;
+        font-size:18px;
+        line-height:1.6;
+        white-space:pre-wrap;
+        word-break:break-word;
+        overflow-wrap:anywhere;
       }
 
       .card-footer{
@@ -368,7 +343,9 @@ app.get("/", (req, res) => {
         justify-content:space-between;
         align-items:flex-end;
         gap:14px;
-        margin-top:auto;
+        margin-top:18px;
+        padding-top:14px;
+        border-top:1px dashed rgba(126,240,255,.14);
       }
 
       .call-btn{
@@ -390,17 +367,7 @@ app.get("/", (req, res) => {
         color:#8da7d3;
         font-size:13px;
         text-align:right;
-        line-height:1.5;
-      }
-
-      .raw{
-        margin-top:14px;
-        padding-top:12px;
-        border-top:1px dashed rgba(126,240,255,.14);
-        color:#88a2cf;
-        font-size:12px;
-        line-height:1.5;
-        word-break:break-word;
+        line-height:1.6;
       }
 
       .empty{
@@ -415,7 +382,7 @@ app.get("/", (req, res) => {
 
       @media (max-width: 1180px){
         .controls{ grid-template-columns: repeat(3, minmax(0,1fr)); }
-        .cards{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+        .cards{ grid-template-columns: 1fr; }
       }
 
       @media (max-width: 760px){
@@ -427,7 +394,7 @@ app.get("/", (req, res) => {
           padding-left:16px;
           padding-right:16px;
         }
-        .route{ font-size:24px; }
+        .message-box{ font-size:16px; }
       }
     </style>
   </head>
@@ -446,9 +413,9 @@ app.get("/", (req, res) => {
 
         <div class="hero-right">
           <div class="stat-card">
-            <div class="stat-label">Aktif Yük</div>
+            <div class="stat-label">Aktif İlan</div>
             <div class="stat-value" id="statTotal">0</div>
-            <div class="stat-note">Filtreye göre güncellenir</div>
+            <div class="stat-note">En yeni ilan en üstte görünür</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Canlı Durum</div>
@@ -461,7 +428,7 @@ app.get("/", (req, res) => {
         <div class="panel-head">
           <div>
             <div class="panel-title">Yük Arama ve Filtreleme</div>
-            <div class="panel-sub">Yükleme, boşaltma, araç tipi ve kasa tipine göre filtrele.</div>
+            <div class="panel-sub">Mesajların içinde arama yaparak ilanları filtrele.</div>
           </div>
         </div>
 
@@ -478,17 +445,17 @@ app.get("/", (req, res) => {
 
           <div class="field">
             <label>Araç Tipi</label>
-            <input id="filterVehicle" class="input" placeholder="Örn: Tır, Kamyon, 10 Teker" />
+            <input id="filterVehicle" class="input" placeholder="Örn: tır, kamyon, 10 teker" />
           </div>
 
           <div class="field">
             <label>Kasa Tipi</label>
-            <input id="filterType" class="input" placeholder="Örn: Açık, Tenteli, Damper" />
+            <input id="filterType" class="input" placeholder="Örn: açık, tenteli, damper" />
           </div>
 
           <div class="field">
             <label>Telefon</label>
-            <input id="filterPhone" class="input" placeholder="Örn: 0544" />
+            <input id="filterPhone" class="input" placeholder="Örn: 0533" />
           </div>
 
           <div class="field">
@@ -504,7 +471,7 @@ app.get("/", (req, res) => {
         </div>
 
         <div class="results-bar">
-          <div id="resultsText">Yükler yükleniyor...</div>
+          <div id="resultsText">İlanlar yükleniyor...</div>
           <div></div>
         </div>
 
@@ -523,15 +490,6 @@ app.get("/", (req, res) => {
         return safe(haystack).toLowerCase().includes(safe(needle).toLowerCase());
       }
 
-      function buildChips(item){
-        const chips = [];
-        if (safe(item.vehicle)) chips.push(item.vehicle);
-        if (safe(item.type)) chips.push(item.type);
-        if (safe(item.weight)) chips.push(item.weight);
-        if (safe(item.price)) chips.push("Fiyat: " + item.price);
-        return chips;
-      }
-
       function renderCards(items){
         const cards = document.getElementById("cards");
         const statTotal = document.getElementById("statTotal");
@@ -546,23 +504,16 @@ app.get("/", (req, res) => {
         }
 
         cards.innerHTML = items.map(item => {
-          const chips = buildChips(item);
           return \`
             <div class="load-card">
-              <div class="route">\${safe(item.from)} <span>→</span> \${safe(item.to)}</div>
+              <div class="phone-top">\${safe(item.phone)}</div>
 
-              \${chips.length ? '<div class="chips">' + chips.map(c => '<div class="chip">' + c + '</div>').join('') + '</div>' : ''}
-
-              <div class="meta-block">
-                \${safe(item.phone) ? '<div class="meta-line"><strong>Telefon:</strong> ' + safe(item.phone) + '</div>' : ''}
-              </div>
+              <div class="message-box">\${safe(item.cleanText || item.rawText)}</div>
 
               <div class="card-footer">
                 \${safe(item.phone) ? '<a class="call-btn" href="tel:' + safe(item.phone) + '">Ara</a>' : '<div></div>'}
                 <div class="share-time">\${safe(item.sharedAt) ? 'Paylaşım Zamanı: ' + safe(item.sharedAt) : ''}</div>
               </div>
-
-              \${safe(item.rawText) ? '<div class="raw">Ham mesaj: ' + safe(item.rawText) + '</div>' : ''}
             </div>
           \`;
         }).join("");
@@ -577,12 +528,15 @@ app.get("/", (req, res) => {
         const raw = document.getElementById("filterRaw").value;
 
         const filtered = allLoads.filter(item => {
-          if (from && !contains(item.from, from)) return false;
-          if (to && !contains(item.to, to)) return false;
-          if (vehicle && !contains(item.vehicle, vehicle)) return false;
-          if (type && !contains(item.type, type)) return false;
+          const msg = safe(item.cleanText || item.rawText);
+
+          if (from && !contains(msg, from)) return false;
+          if (to && !contains(msg, to)) return false;
+          if (vehicle && !contains(msg, vehicle)) return false;
+          if (type && !contains(msg, type)) return false;
           if (phone && !contains(item.phone, phone)) return false;
-          if (raw && !contains(item.rawText, raw)) return false;
+          if (raw && !contains(msg, raw)) return false;
+
           return true;
         });
 
@@ -613,29 +567,25 @@ app.get("/", (req, res) => {
 });
 
 app.post("/api/import", (req, res) => {
-  const { from, to, vehicle, type, weight, price, phone, rawText, sharedAt, apiKey } = req.body;
+  const { phone, rawText, cleanText, sharedAt, apiKey } = req.body;
 
   if (apiKey !== "123456") {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
-  if (!safe(from) || !safe(to) || !safe(phone)) {
-    return res.status(400).json({ ok: false, error: "Rota ve telefon zorunlu" });
+  if (!safe(phone) || !safe(rawText)) {
+    return res.status(400).json({ ok: false, error: "Telefon ve mesaj zorunlu" });
   }
 
+  // En yeni en başta
   loads.unshift({
-    from: safe(from),
-    to: safe(to),
-    vehicle: safe(vehicle),
-    type: safe(type),
-    weight: safe(weight),
-    price: safe(price),
     phone: safe(phone),
     rawText: safe(rawText),
+    cleanText: safe(cleanText),
     sharedAt: safe(sharedAt)
   });
 
-  res.json({ ok: true, message: "Yük eklendi" });
+  res.json({ ok: true, message: "İlan eklendi" });
 });
 
 app.listen(3000, () => {
