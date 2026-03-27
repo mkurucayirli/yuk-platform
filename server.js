@@ -58,7 +58,7 @@ app.get("/", (req, res) => {
       }
 
       .container{
-        max-width: 1320px;
+        max-width: 1080px;
         margin: 0 auto;
         padding: 28px 18px 60px;
         position:relative;
@@ -74,7 +74,7 @@ app.get("/", (req, res) => {
       }
 
       .hero-left{
-        flex: 1 1 740px;
+        flex: 1 1 680px;
         min-width: 320px;
         padding: 26px;
         border:1px solid rgba(126,240,255,.18);
@@ -131,8 +131,8 @@ app.get("/", (req, res) => {
       }
 
       .hero-right{
-        flex: 0 1 320px;
-        min-width:280px;
+        flex: 0 1 260px;
+        min-width:240px;
         display:grid;
         grid-template-columns: 1fr;
         gap:16px;
@@ -201,7 +201,7 @@ app.get("/", (req, res) => {
 
       .controls{
         display:grid;
-        grid-template-columns: repeat(6, minmax(0,1fr));
+        grid-template-columns: repeat(3, minmax(0,1fr));
         gap:14px;
         padding:20px 22px 10px;
       }
@@ -221,7 +221,7 @@ app.get("/", (req, res) => {
 
       .input{
         width:100%;
-        height:48px;
+        height:46px;
         border-radius:16px;
         border:1px solid rgba(106,166,255,.22);
         background: rgba(9,20,39,.88);
@@ -248,7 +248,7 @@ app.get("/", (req, res) => {
       }
 
       .btn{
-        height:46px;
+        height:44px;
         border:none;
         border-radius:16px;
         padding:0 18px;
@@ -290,25 +290,21 @@ app.get("/", (req, res) => {
 
       .cards{
         display:grid;
-        grid-template-columns: repeat(2, minmax(0,1fr));
-        gap:18px;
+        grid-template-columns: 1fr;
+        gap:16px;
         padding: 0 22px 22px;
       }
 
       .load-card{
         position:relative;
-        min-height:260px;
-        padding:20px;
+        padding:16px 18px;
         border-radius:24px;
         border:1px solid rgba(126,240,255,.14);
         background:
           linear-gradient(180deg, rgba(19,38,72,.95), rgba(10,20,39,.94));
         box-shadow:
-          0 16px 40px rgba(0,0,0,.40),
+          0 16px 40px rgba(0,0,0,.32),
           inset 0 1px 0 rgba(255,255,255,.04);
-        transform: perspective(1200px) rotateX(6deg);
-        display:flex;
-        flex-direction:column;
       }
 
       .load-card::before{
@@ -316,23 +312,37 @@ app.get("/", (req, res) => {
         position:absolute;
         inset:0;
         border-radius:24px;
-        background: radial-gradient(circle at top right, rgba(126,240,255,.10), transparent 28%);
+        background: radial-gradient(circle at top right, rgba(126,240,255,.08), transparent 28%);
         pointer-events:none;
+      }
+
+      .card-top{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:16px;
+        margin-bottom:12px;
       }
 
       .phone-top{
         color:#9fe4ff;
         font-weight:700;
-        font-size:15px;
-        margin-bottom:14px;
+        font-size:14px;
         word-break:break-word;
       }
 
+      .share-time-top{
+        color:#8da7d3;
+        font-size:12px;
+        text-align:right;
+        line-height:1.5;
+        white-space:nowrap;
+      }
+
       .message-box{
-        flex:1;
         color:#eaf2ff;
-        font-size:18px;
-        line-height:1.6;
+        font-size:14px;
+        line-height:1.55;
         white-space:pre-wrap;
         word-break:break-word;
         overflow-wrap:anywhere;
@@ -340,11 +350,11 @@ app.get("/", (req, res) => {
 
       .card-footer{
         display:flex;
-        justify-content:space-between;
-        align-items:flex-end;
+        justify-content:flex-start;
+        align-items:center;
         gap:14px;
-        margin-top:18px;
-        padding-top:14px;
+        margin-top:14px;
+        padding-top:12px;
         border-top:1px dashed rgba(126,240,255,.14);
       }
 
@@ -352,22 +362,15 @@ app.get("/", (req, res) => {
         display:inline-flex;
         align-items:center;
         justify-content:center;
-        min-width:138px;
-        height:46px;
-        padding:0 16px;
-        border-radius:16px;
+        min-width:110px;
+        height:40px;
+        padding:0 14px;
+        border-radius:14px;
         text-decoration:none;
         color:#031120;
         background: linear-gradient(135deg, #a7daff, #6aa6ff);
         font-weight:800;
-        box-shadow: 0 12px 24px rgba(106,166,255,.22);
-      }
-
-      .share-time{
-        color:#8da7d3;
-        font-size:13px;
-        text-align:right;
-        line-height:1.6;
+        box-shadow: 0 10px 20px rgba(106,166,255,.18);
       }
 
       .empty{
@@ -380,21 +383,28 @@ app.get("/", (req, res) => {
         background: rgba(8,19,37,.75);
       }
 
-      @media (max-width: 1180px){
-        .controls{ grid-template-columns: repeat(3, minmax(0,1fr)); }
-        .cards{ grid-template-columns: 1fr; }
+      @media (max-width: 900px){
+        .controls{ grid-template-columns: 1fr 1fr; }
       }
 
       @media (max-width: 760px){
         .container{ padding:18px 12px 36px; }
         .hero-left, .panel{ border-radius:22px; }
         .controls{ grid-template-columns: 1fr; }
-        .cards{ grid-template-columns: 1fr; padding: 0 16px 16px; }
+        .cards{ padding: 0 16px 16px; }
         .panel-head, .controls, .actions, .results-bar{
           padding-left:16px;
           padding-right:16px;
         }
-        .message-box{ font-size:16px; }
+        .message-box{ font-size:13px; }
+        .card-top{
+          flex-direction:column;
+          gap:8px;
+        }
+        .share-time-top{
+          text-align:left;
+          white-space:normal;
+        }
       }
     </style>
   </head>
@@ -506,13 +516,15 @@ app.get("/", (req, res) => {
         cards.innerHTML = items.map(item => {
           return \`
             <div class="load-card">
-              <div class="phone-top">\${safe(item.phone)}</div>
+              <div class="card-top">
+                <div class="phone-top">\${safe(item.phone)}</div>
+                <div class="share-time-top">\${safe(item.sharedAt) ? 'Paylaşım Zamanı: ' + safe(item.sharedAt) : ''}</div>
+              </div>
 
               <div class="message-box">\${safe(item.cleanText || item.rawText)}</div>
 
               <div class="card-footer">
                 \${safe(item.phone) ? '<a class="call-btn" href="tel:' + safe(item.phone) + '">Ara</a>' : '<div></div>'}
-                <div class="share-time">\${safe(item.sharedAt) ? 'Paylaşım Zamanı: ' + safe(item.sharedAt) : ''}</div>
               </div>
             </div>
           \`;
@@ -577,7 +589,6 @@ app.post("/api/import", (req, res) => {
     return res.status(400).json({ ok: false, error: "Telefon ve mesaj zorunlu" });
   }
 
-  // En yeni en başta
   loads.unshift({
     phone: safe(phone),
     rawText: safe(rawText),
